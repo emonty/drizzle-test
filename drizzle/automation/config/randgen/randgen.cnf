@@ -1,0 +1,63 @@
+[drizzled]
+plugin_add= blitzdb
+plugin_add= crash_function
+plugin_add= shutdown_function
+
+[run]
+# location of the Random Query Generator repository
+randgen_home= /home/hudson/repos/randgen
+# indivual tests can override threads and query values if necessary by specifying the values 
+# in the rangen_tests section
+# Until #492391 is fixed we need to run at a lower number of threads and queries
+threads=5
+queries=1000
+engine=Innodb
+debug=0
+
+[randgen_tests]
+basic= --gendata=conf/drizzle/drizzle.zz --grammar=conf/drizzle/drizzle.yy 
+blobs= --gendata=conf/drizzle/drizzle.zz --grammar=conf/engines/blobs.yy --Validators=None
+collations= --gendata=conf/drizzle/drizzle.zz --grammar=conf/drizzle/collations_drizzle.yy
+combinations= --gendata=conf/drizzle/combinations_drizzle.zz --grammar=conf/transactions/combinations.yy
+create_drop= --gendata=conf/drizzle/drizzle.zz --grammar=conf/runtime/create_drop.yy
+database_consistency_after_recovery= --gendata=conf/transactions/transactions.zz --grammar=conf/transactions/transactions.yy --reporters=DrizzleRecoveryConsistency
+database_integrity_after_recovery= --gendata=conf/drizzle/drizzle.zz --grammar=conf/drizzle/drizzle.yy --reporters=DrizzleRecovery
+limit_compare= --gendata=conf/drizzle/drizzle.zz --grammar=conf/drizzle/limit_compare_drizzle.yy
+# need to run many_indexes at lower number of threads and queries until #492391 is fixed
+many_indexes= --gendata=conf/drizzle/many_indexes_drizzle.zz --grammar=conf/drizzle/many_indexes_drizzle.yy --threads=1 --queries=10 --Validators=None
+repeatable_read= --gendata=conf/transactions/transactions.zz --grammar=conf/transactions/repeatable_read.yy --validators=RepeatableRead
+subquery= --gendata=conf/drizzle/drizzle.zz --grammar=conf/drizzle/subquery_drizzle.yy
+varchar= --gendata=conf/drizzle/varchar_drizzle.zz --grammar=conf/engines/varchar.yy
+outer_join_portable= --gendata=conf/drizzle/outer_join_drizzle.zz --grammar=conf/drizzle/outer_join_portable_drizzle.yy
+outer_join= --gendata=conf/drizzle/outer_join_drizzle.zz --grammar=conf/drizzle/outer_join_drizzle.yy
+orderby_validator= --gendata=conf/drizzle/drizzle.zz --grammar=conf/drizzle/subquery_semijoin_drizzle.yy --validators=OrderBy
+select_stability_validator= --gendata=conf/drizzle/drizzle.zz --grammar=conf/drizzle/subquery_materialization_drizzle.yy --validators=SelectStability
+subquery_semijoin_nested= --gendata=conf/drizzle/drizzle.zz --grammar=conf/drizzle/subquery_semijoin_nested_drizzle.yy
+subquery_semijoin= --gendata=conf/drizzle/drizzle.zz --grammar=conf/drizzle/subquery_semijoin_drizzle.yy
+drizzledump = --gendata=conf/drizzle/drizzle.zz --grammar=conf/drizzle/drizzledump.yy --Validator=Drizzledump --queries=50 --threads=1
+drizzledump_rand = --gendata=conf/drizzle/drizzle.zz --grammar=conf/drizzle/drizzledump.yy --Validator=Drizzledump --queries=25 --seed=time --threads=1
+outer_join_execute= --gendata=conf/drizzle/drizzle.zz --grammar=conf/drizzle/outer_join_drizzle.yy --threads=1 --Validator=DrizzleTransformer --seed=time
+optimizer_subquery_execute= --gendata=conf/drizzle/drizzle.zz --grammar=conf/drizzle/optimizer_subquery-drizzle.yy --threads=1 --Validator=DrizzleTransformer 
+
+# Temporarily disabled - Bug 608416
+# optimizer_subquery= --gendata=conf/drizzle/drizzle.zz --grammar=conf/drizzle/optimizer_subquery_drizzle.yy --validators=SelectStability
+
+# Tests waiting on bug fixes
+# https://bugs.launchpad.net/drizzle/+bug/492391
+#engine_stress= --gendata=conf/drizzle/drizzle.zz --grammar=conf/engines/engine_stress.yy
+#optimizer_no_subquery_portable= --gendata=conf/drizzle/drizzle.zz --grammar=conf/optimizer/optimizer_no_subquery_portable.yy --validators=SelectStability
+#optimizer_no_subquery= --gendata=conf/drizzle/drizzle.zz --grammar=conf/optimizer/optimizer_no_subquery.yy --validators=SelectStability
+#proclist_drizzle= --gendata=conf/drizzle/drizzle.zz --grammar=conf/drizzle/proclist_drizzle.yy
+#proclist_subquery_drizzle= --gendata=conf/drizzle/drizzle.zz --grammar=conf/drizzle/proclist_subquery_drizzle.yy
+#outer_join_data_dictionary = --gendata=conf/drizzle/outer_join_drizzle.zz --grammar=conf/drizzle/outer_join_data_dictionary_drizzle.yy
+#optimizer_subquery_data_dictionary= --gendata=conf/drizzle/drizzle.zz --grammar=conf/drizzle/optimizer_subquery_data_dictionary_drizzle.yy
+
+# needs investigation
+#invariant=--gendata=conf/drizzle/invariant_drizzle.zz --grammar=conf/drizzle/invariant_drizzle.yy
+#range_access= --gendata=conf/drizzle/range_access_drizzle.zz --grammar=conf/drizzle/range_access_drizzle.yy
+#transactionals-flat= --gendata=conf/transactions/transactions.zz --grammar=conf/transactions/transactions-flat.yy --validators=DatabaseConsistency
+#transactional_durability= --gendata=conf/transactions/transactions.zz --grammar=conf/transactions/transaction_durability.yy --validators=DatabaseConsistency --reporters=Recovery --validators=ResultsetComparator
+#transactional_integrity= --gendata=conf/transactions/transactions.zz --grammar=conf/transactions/transactions.yy --validators=DatabaseConsistency
+
+#  WL5004= Needs modifications to grammar
+#WL5004= --gendata=conf/runtime/WL5004_data.zz --grammar=conf/runtime/WL5004_sql.yy

@@ -1,0 +1,78 @@
+[defaults]
+
+# The root repository which drizzle-automation uses in order
+# to create sandboxes for the automated processes.
+
+bzr_repo_dir= /home/drizzle/repos/
+
+# The default branch that is operated upon by drizzle-automation
+# processes.  This branch must exist under repo-dir.
+
+bzr_branch= staging
+
+[db]
+
+# mysql username to use when connecting to the stats database
+
+mysql_user= drizzle
+
+# mysql password to use when connecting to the stats database
+
+mysql_pass= drizzle
+
+# mysql host of the stats database
+
+mysql_host= localhost
+
+# Name of the stats database
+
+db_name= drizzle_stats
+
+# Use either mysql or drizzle db to store benchmark data
+
+use_db= drizzle
+
+[ssh]
+
+# Username used in rsync/ssh operations
+
+ssh_user= drizzle
+
+[doxy]
+
+ssh_user= jpipes
+rsync_dir= drizzle.org:web/doxygen/
+
+[dbt2]
+
+# Email recipients to receive a text regression report on completion of a run. Comma separated.
+report_email= drizzle-benchmark@lists.launchpad.net
+
+[drizzleslap]
+# Email recipients to receive a text regression report on completion of a run. Comma separated.
+report_email= drizzle-benchmark@lists.launchpad.net
+
+[lcov]
+
+# Directories queried during GCOV/LCOV code coverage
+
+directories= client,drizzled,plugin
+
+[sqlbench]
+
+# Email recipients to receive a text regression report on completion of
+# a sqlbench run. Comma separated.
+report_email= drizzle-benchmark@lists.launchpad.net
+
+[sysbench]
+
+# Email recipients to receive a text regression report on completion of
+# a sysbench run. Comma separated.
+report_email= drizzle-benchmark@lists.launchpad.net
+
+[sloc]
+
+# Directories queried during SLOCcount processing
+
+directories= client,drizzled,plugin
+

@@ -1,0 +1,60 @@
+[drizzled]
+
+# Options provided directly to the drizzled server
+# when the server is started.
+
+innodb.buffer-pool-size= 128M
+innodb.log-file-size= 64M
+innodb.log-buffer-size= 8M
+innodb.thread-concurrency= 0
+innodb.additional-mem-pool-size= 16M
+table-open-cache= 4096
+table-definition-cache= 4096
+mysql-protocol.max-connections=2048
+
+[mysqld]
+
+# Options provided directly to the mysqld server
+# when the server is started.
+
+innodb-buffer-pool-size= 128M
+innodb-log-file-size= 64M
+innodb-log-buffer-size= 8M
+innodb-thread-concurrency= 0
+innodb-additional-mem-pool-size= 16M
+character-set-server= utf8
+table-open-cache= 4096
+open-files-limit= 4096
+
+[run]
+
+# Number of iterations to run
+
+iterations= 3
+
+# Comma-delimited list of concurrency levels to run
+
+concurrency= 16,32,64,128,256,512,1024
+
+[build]
+
+# Options to pass to configure
+
+configure_options= --disable-tcmalloc
+
+# Options to pass to make
+
+make_options= -j2
+
+[sysbench]
+
+# Options given to the sysbench program on every iteration
+
+max-time= 240
+max-requests= 0 
+test= oltp 
+db-ps-mode= disable 
+drizzle-table-engine= innodb 
+oltp-read-only= off
+oltp-table-size= 1000000
+drizzle-mysql= on

@@ -1,0 +1,26 @@
+[drizzled]
+secure-file-priv= /home/drizzle/repos/dbt2/data_dir
+
+[run]
+
+# location of the dbt2 repository
+dbt2_home= /home/drizzle/repos/dbt2
+
+# location of generated data
+dbt2_data_dir= /home/drizzle/repos/dbt2/data_dir
+
+# number of data warehouses
+dbt2_warehouses= 10
+
+# number of connections
+dbt2_connections= 16,32,64,128,256,512,1024
+
+# time to run the tests
+dbt2_time= 300
+
+# warehouses per driver
+dbt2_warehouses_per_driver= 40
+
+# name of database
+dbt2_dbname= dbt2
+

@@ -1,0 +1,29 @@
+[drizzled]
+plugin-add= blackhole,archive
+
+[build]
+# Options to pass to make
+make_options= -j6
+
+[run]
+common_options= --number-int-cols=2 --number-char-cols=3 --auto-generate-sql
+concurrency= 50 
+iterations= 10
+
+[drizzleslap_tests]
+key_archive=  --auto-generate-sql-add-autoincrement --auto-generate-sql-load-type=key --number-of-queries=100000 --engine=archive
+key-scale_archive= --auto-generate-sql-add-autoincrement --auto-generate-sql-load-type=key --auto-generate-sql-execute-number=1000 --engine=archive
+mixed_archive= --auto-generate-sql-add-autoincrement --auto-generate-sql-load-type=mixed --number-of-queries=100000 --engine=archive
+mixed-commit_archive= --auto-generate-sql-add-autoincrement --auto-generate-sql-load-type=mixed --number-of-queries=100000 --commit=8 --engine=archive
+mixed-commit-scale_archive= --auto-generate-sql-add-autoincrement --auto-generate-sql-load-type=mixed --auto-generate-sql-execute-number=1000 --commit=8 --engine=archive
+mixed-scale_archive= --auto-generate-sql-add-autoincrement --auto-generate-sql-load-type=mixed --auto-generate-sql-execute-number=1000 --engine=archive
+scan_archive= --auto-generate-sql-add-autoincrement --auto-generate-sql-load-type=read --number-of-queries=100000 --engine=archive
+scan-scale_archive= --auto-generate-sql-add-autoincrement --auto-generate-sql-load-type=read --auto-generate-sql-execute-number=1000 --engine=archive
+write_archive= --auto-generate-sql-add-autoincrement --auto-generate-sql-load-type=write --number-of-queries=100000 --engine=archive
+write-commit_archive= --auto-generate-sql-add-autoincrement --auto-generate-sql-load-type=write --number-of-queries=100000 --commit=8 --engine=archive
+write-commit-scale_archive= --auto-generate-sql-add-autoincrement --auto-generate-sql-load-type=write --auto-generate-sql-execute-number=1000 --commit=8 --engine=archive
+write-scale_archive= --auto-generate-sql-add-autoincrement --auto-generate-sql-load-type=write --auto-generate-sql-execute-number=1000 --engine=archive
+write_bh= --auto-generate-sql-add-autoincrement --auto-generate-sql-load-type=write --number-of-queries=100000 --engine=blackhole
+write-scale_bh= --auto-generate-sql-add-autoincrement --auto-generate-sql-load-type=write --auto-generate-sql-execute-number=1000 --engine=blackhole
+guid_bh= --auto-generate-sql-guid-primary --auto-generate-sql-load-type=write --number-of-queries=100000 --engine=blackhole
+guid-scale_bh= --auto-generate-sql-guid-primary --auto-generate-sql-load-type=write --auto-generate-sql-execute-number=1000 --engine=blackhole

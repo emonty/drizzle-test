@@ -1,0 +1,29 @@
+[build]
+# Options to pass to make
+make_options= -j6
+
+[run]
+common_options= --number-int-cols=2 --number-char-cols=3 --auto-generate-sql
+concurrency= 50 
+engine= innodb
+iterations= 10
+
+[drizzleslap_tests]
+guid= --auto-generate-sql-guid-primary --auto-generate-sql-load-type=write --number-of-queries=100000 --engine=innodb
+guid-scale= --auto-generate-sql-guid-primary --auto-generate-sql-load-type=write --auto-generate-sql-execute-number=1000 --engine=innodb
+key=  --auto-generate-sql-add-autoincrement --auto-generate-sql-load-type=key --number-of-queries=100000 --engine=innodb
+key-scale= --auto-generate-sql-add-autoincrement --auto-generate-sql-load-type=key --auto-generate-sql-execute-number=1000 --engine=innodb
+mixed= --auto-generate-sql-add-autoincrement --auto-generate-sql-load-type=mixed --number-of-queries=100000 --engine=innodb
+mixed-commit= --auto-generate-sql-add-autoincrement --auto-generate-sql-load-type=mixed --number-of-queries=100000 --commit=8 --engine=innodb
+mixed-commit-scale= --auto-generate-sql-add-autoincrement --auto-generate-sql-load-type=mixed --auto-generate-sql-execute-number=1000 --commit=8 --engine=innodb
+mixed-scale= --auto-generate-sql-add-autoincrement --auto-generate-sql-load-type=mixed --auto-generate-sql-execute-number=1000 --engine=innodb
+scan= --auto-generate-sql-add-autoincrement --auto-generate-sql-load-type=read --number-of-queries=100000 --engine=innodb
+scan-scale= --auto-generate-sql-add-autoincrement --auto-generate-sql-load-type=read --auto-generate-sql-execute-number=1000 --engine=innodb
+update= --auto-generate-sql-add-autoincrement --auto-generate-sql-load-type=update --number-of-queries=100000 --auto-generate-sql-write-number=50000 --engine=innodb
+update-commit=  --auto-generate-sql-add-autoincrement --auto-generate-sql-load-type=update --number-of-queries=100000 --auto-generate-sql-write-number=50000 --commit=8 --engine=innodb
+update-commit-scale= --auto-generate-sql-add-autoincrement --auto-generate-sql-load-type=update --auto-generate-sql-execute-number=1000  --auto-generate-sql-write-number=50000 --commit=8 --engine=innodb
+update-scale= --auto-generate-sql-add-autoincrement --auto-generate-sql-load-type=update --auto-generate-sql-execute-number=1000 --auto-generate-sql-write-number=50000 --engine=innodb
+write= --auto-generate-sql-add-autoincrement --auto-generate-sql-load-type=write --number-of-queries=100000 --engine=innodb
+write-commit= --auto-generate-sql-add-autoincrement --auto-generate-sql-load-type=write --number-of-queries=100000 --commit=8 --engine=innodb
+write-commit-scale= --auto-generate-sql-add-autoincrement --auto-generate-sql-load-type=write --auto-generate-sql-execute-number=1000 --commit=8 --engine=innodb
+write-scale= --auto-generate-sql-add-autoincrement --auto-generate-sql-load-type=write --auto-generate-sql-execute-number=1000 --engine=innodb

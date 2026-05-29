@@ -1,0 +1,7 @@
+[run]
+
+# location of the sql bench repository
+sqlbench_home= /home/drizzle/repos/sql-bench
+
+# turn on or off adding debug information to the output
+debug=0

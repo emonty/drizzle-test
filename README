@@ -1,0 +1,40 @@
+This is currently very WIP.
+
+This repo has the contents of the old drizzle-automation
+bzr repo, as well as the contents of the tests/ dir from
+the drizzle source tree.
+
+The python code in drizzle/ here is where the job content
+from our old CI system was actually defined (thankfully
+not directly in Hudson jobs or it would be lost)
+
+The tests/ dir has the perl-driven functional tests
+originally from MySQL and then via what became DTR.
+
+The goal here is a repo similar to OpenStack's Tempest.
+We'll put the test definitions here, separately, then
+use Zuul to run these tests against built drizzle
+containers. They currently assume they're running in
+the source tree, but what we really want to test is the
+built container image anyway, so we should be able to
+update that.t
+
+We can leverage the old drizzle-automation code as
+initial scaffolding for a set of Zuul jobs. It doesn't
+need to stay python, although it could transition into
+ansible modules, or just zuul jobs (they aren't so
+fancy they need to actually be in Python)
+
+We'll end up with the following 4 interrelated repos
+that will all cross-test each other:
+
+  - drizzle
+  - drizzle-test
+  - libdrizzle
+  - drizzle-client
+  - dbd-drizzle
+
+sql-bench uses DBD::drizzle, which in turn
+uses libdrizzle. libdrizzle is needed by drizzle-client,
+and currently also is used as part of the protocol
+implementation in the server.

@@ -1,0 +1,4 @@
+[run]
+
+# location of the sql bench repository
+sqlbench_home= /home/drizzle/repos/sql-bench

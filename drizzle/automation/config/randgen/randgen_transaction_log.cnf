@@ -1,0 +1,35 @@
+[drizzled]
+--transaction-log.enable= option_flag
+
+[run]
+# location of the Random Query Generator repository
+randgen_home= /home/drizzle/repos/randgen
+# individual tests can override threads and query values if necessary by specifying the values 
+# in the rangen_tests section
+# Until #492391 is fixed we need to run at a lower number of threads and queries
+threads=5
+queries=500
+engine=Innodb
+debug=0
+
+[randgen_tests]
+single_thread3= --gendata=conf/drizzle/translog_drizzle.zz --grammar=conf/drizzle/translog_concurrent3.yy --Reporter=DrizzleTransactionLog  --queries=250 --threads=1
+multi_thread1=  --gendata=conf/drizzle/translog_drizzle.zz --grammar=conf/drizzle/translog_concurrent1.yy --Reporter=DrizzleTransactionLog  --queries=500 
+# We want to run at --queries=500, but cutting down to 250 to avoid a bug for the moment
+multi_thread2=  --gendata=conf/drizzle/translog_drizzle.zz --grammar=conf/drizzle/translog_concurrent2.yy --Reporter=DrizzleTransactionLog  --queries=250
+multi_thread3=  --gendata=conf/drizzle/translog_drizzle.zz --grammar=conf/drizzle/translog_concurrent3.yy --Reporter=DrizzleTransactionLog  --queries=250 --threads=2
+multi_thread1_mix=  --gendata=conf/drizzle/translog_drizzle.zz --grammar=conf/drizzle/translog_concurrent1.yy --Reporter=DrizzleTransactionLog  --queries=250 --seed=time
+multi_thread2_mix=  --gendata=conf/drizzle/translog_drizzle.zz --grammar=conf/drizzle/translog_concurrent2.yy --Reporter=DrizzleTransactionLog  --queries=250 --seed=time
+multi_thread3_mix= --gendata=conf/drizzle/translog_drizzle.zz --grammar=conf/drizzle/translog_concurrent3.yy --Reporter=DrizzleTransactionLog  --queries=250 --seed=time --threads=2
+ordering= --gendata=conf/drizzle/translog_ordering.zz --grammar=conf/drizzle/translog_ordering.yy --Reporter=DrizzleTransactionLog --threads=5  --queries=500
+
+[build]
+
+# Options to pass to configure
+
+configure_options= --disable-tcmalloc
+
+# Options to pass to make
+
+make_options= -j16
+
