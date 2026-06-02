@@ -210,8 +210,7 @@ our $opt_manual_gdb;
 our $opt_manual_dbx;
 our $opt_manual_ddd;
 our $opt_manual_debug;
-# Magic number -69.4 results in traditional test ports starting from 9306.
-our $opt_dtr_build_thread=-69.4;
+our $opt_dtr_build_thread;
 our $opt_debugger;
 our $opt_client_debugger;
 
@@ -459,20 +458,6 @@ sub command_line_setup () {
 
   my $opt_comment;
 
-  # If so requested, we try to avail ourselves of a unique build thread number.
-  if ( $ENV{'DTR_BUILD_THREAD'} ) {
-    if ( lc($ENV{'DTR_BUILD_THREAD'}) eq 'auto' ) {
-      print "Requesting build thread... ";
-      $ENV{'DTR_BUILD_THREAD'} = dtr_require_unique_id_and_wait("/tmp/drizzle-test-ports", 200, 299);
-      print "got ".$ENV{'DTR_BUILD_THREAD'}."\n";
-    }
-  }
-
-  if ( $ENV{'DTR_BUILD_THREAD'} )
-  {
-    set_dtr_build_thread_ports($ENV{'DTR_BUILD_THREAD'});
-  }
-
   # This is needed for test log evaluation in "gen-build-status-page"
   # in all cases where the calling tool does not log the commands
   # directly before it executes them, like "make test-force-pl" in RPM builds.
@@ -615,13 +600,20 @@ sub command_line_setup () {
 
   $glob_scriptname=  basename($0);
 
-  if ($opt_dtr_build_thread != 0)
+  if (defined $opt_dtr_build_thread && $opt_dtr_build_thread != 0)
   {
     set_dtr_build_thread_ports($opt_dtr_build_thread)
   }
   elsif ($ENV{'DTR_BUILD_THREAD'})
   {
     $opt_dtr_build_thread= $ENV{'DTR_BUILD_THREAD'};
+    set_dtr_build_thread_ports($opt_dtr_build_thread)
+  }
+  elsif (!defined $opt_dtr_build_thread)
+  {
+    # Magic number -69.4 results in traditional test ports starting from 9306.
+    $opt_dtr_build_thread= -69.4;
+    set_dtr_build_thread_ports($opt_dtr_build_thread)
   }
 
   if ( -d "../drizzled" )
@@ -1129,6 +1121,45 @@ sub gimme_a_good_port($)
   return $port_to_test;
 
 }
+
+sub is_port_free($)
+{
+  my $port_to_test= shift;
+  my $sock= new IO::Socket::INET(LocalAddr => '127.0.0.1',
+                                 LocalPort => $port_to_test,
+                                 Proto => 'tcp',
+                                 Listen => 1);
+  if ($sock)
+  {
+    close($sock);
+    return 1;
+  }
+  return 0;
+}
+
+sub gimme_a_good_base_port($@)
+{
+  my $port_to_test= shift;
+  my @offsets= @_;
+
+  while (1)
+  {
+    $port_to_test= gimme_a_good_port($port_to_test);
+
+    my $base_is_good= 1;
+    foreach my $offset (@offsets)
+    {
+      if (!is_port_free($port_to_test + $offset))
+      {
+        $base_is_good= 0;
+        $port_to_test += 1;
+        last;
+      }
+    }
+
+    return $port_to_test if $base_is_good;
+  }
+}
 #
 # To make it easier for different devs to work on the same host,
 # an environment variable can be used to control all ports. A small
@@ -1151,17 +1182,28 @@ sub set_dtr_build_thread_ports($) {
   if ( lc($dtr_build_thread) eq 'auto' ) {
     print "Requesting build thread... ";
     $ENV{'DTR_BUILD_THREAD'} = $dtr_build_thread = dtr_require_unique_id_and_wait("/tmp/drizzle-test-ports", 200, 299);
+    $opt_dtr_build_thread= $dtr_build_thread;
     print "got ".$dtr_build_thread."\n";
   }
 
-  $dtr_build_thread= (($dtr_build_thread * 10) % 2000) - 1000;
+  my $port_offset= (($dtr_build_thread * 10) % 2000) - 1000;
 
   # Up to two masters, up to three slaves
   # A magic value in command_line_setup depends on these equations.
-  $opt_master_myport=         gimme_a_good_port($dtr_build_thread + 9000); # and 1
+  $opt_master_myport=         gimme_a_good_base_port($port_offset + 9000,
+                                                     0,
+                                                     1,
+                                                     $secondary_port_offset,
+                                                     $secondary_port_offset + 1);
 
 
-  $opt_slave_myport=          gimme_a_good_port($opt_master_myport + 2);  # and 3 4
+  $opt_slave_myport=          gimme_a_good_base_port($opt_master_myport + 2,
+                                                     0,
+                                                     1,
+                                                     2,
+                                                     $secondary_port_offset,
+                                                     $secondary_port_offset + 1,
+                                                     $secondary_port_offset + 2);
   $opt_memc_myport= gimme_a_good_port($opt_master_myport + 10);
   $opt_pbms_myport= gimme_a_good_port($opt_master_myport + 11);
   $opt_rabbitmq_myport= gimme_a_good_port($opt_master_myport + 12);
@@ -2506,8 +2548,14 @@ sub drizzled_arguments ($$$$) {
   dtr_add_arg($args, "%s--mysql-protocol.port=%d", $prefix,
               $drizzled->{'port'});
 
-  dtr_add_arg($args, "%s--drizzle-protocol.port=%d", $prefix,
-              $drizzled->{'secondary_port'});
+  my $drizzle_protocol_removed=
+    grep { $_ eq "--plugin-remove=drizzle_protocol" } (@opt_extra_drizzled_opt,
+                                                       @$extra_opt);
+  if ( ! $drizzle_protocol_removed )
+  {
+    dtr_add_arg($args, "%s--drizzle-protocol.port=%d", $prefix,
+                $drizzled->{'secondary_port'});
+  }
 
   dtr_add_arg($args, "%s--datadir=%s", $prefix,
 	      $drizzled->{'path_myddir'});

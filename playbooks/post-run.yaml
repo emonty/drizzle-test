@@ -1,0 +1,38 @@
+- hosts: all
+  tasks:
+    - name: Ensure Drizzle test log directory exists
+      file:
+        path: "{{ ansible_user_dir }}/zuul-output/logs/drizzle-tests"
+        state: directory
+        mode: "0755"
+
+    - name: Stop lingering Drizzle DTR containers
+      shell: |
+        podman ps -a --format '{{ "{{" }}.Names{{ "}}" }}' \
+          | awk '/^drizzle-dtr-/ { print }' \
+          | xargs -r podman stop -t 30
+      failed_when: false
+
+    - name: Collect Drizzle DTR container details
+      shell: |
+        podman ps -a > "{{ ansible_user_dir }}/zuul-output/logs/drizzle-tests/podman-ps.txt" 2>&1 || true
+        for container in $(podman ps -a --format '{{ "{{" }}.Names{{ "}}" }}' | awk '/^drizzle-dtr-/ { print }'); do
+          podman logs "${container}" > "{{ ansible_user_dir }}/zuul-output/logs/drizzle-tests/${container}.log" 2>&1 || true
+          podman inspect "${container}" > "{{ ansible_user_dir }}/zuul-output/logs/drizzle-tests/${container}-inspect.json" 2>&1 || true
+        done
+      failed_when: false
+
+    - name: Collect Drizzle DTR logs
+      shell: |
+        src="{{ ansible_user_dir }}/src/opendev.org/drizzle/drizzle-test/.dtr-container-build/tests/var/log"
+        if [ -d "${src}" ]; then
+          cp -a "${src}" "{{ ansible_user_dir }}/zuul-output/logs/drizzle-tests/var-log"
+        fi
+      failed_when: false
+
+    - name: Remove lingering Drizzle DTR containers
+      shell: |
+        podman ps -a --format '{{ "{{" }}.Names{{ "}}" }}' \
+          | awk '/^drizzle-dtr-/ { print }' \
+          | xargs -r podman rm -f
+      failed_when: false

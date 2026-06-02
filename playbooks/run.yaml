@@ -1,0 +1,6 @@
+- hosts: all
+  tasks:
+    - name: Run the regression tests
+      command: timeout --kill-after=30s 3300 ./tools/run-container-dtr.sh
+      args:
+        chdir: "{{ ansible_user_dir }}/src/opendev.org/drizzle/drizzle-test"

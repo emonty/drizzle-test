@@ -1,0 +1,4 @@
+- hosts: all
+  roles:
+    - podman
+    - use-buildset-registry

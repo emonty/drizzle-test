@@ -1,7 +1,33 @@
+- job:
+    name: drizzle-test-dtr
+    parent: opendev-buildset-registry-consumer
+    timeout: 3600
+    vars:
+      container_command: podman
+      # TODO(mordred) tease this out - buildset-registry is pulling in docker
+      use_upstream_docker: false
+    dependencies: opendev-buildset-registry
+    requires:
+      - drizzle-server-container-image
+    description: |
+      Runs DTR from drizzle-test against the Drizzle server image.
+    required-projects:
+      - drizzle/drizzle
+      - drizzle/libdrizzle
+      - drizzle/drizzle-client
+      - drizzle/drizzle-test
+      - drizzle/dbd-drizzle
+    pre-run: playbooks/pre-run.yaml
+    run: playbooks/run.yaml
+    post-run: playbooks/post-run.yaml
+
 - project:
+    queue: drizzle
     check:
       jobs:
-        - noop
+        - opendev-buildset-registry
+        - drizzle-test-dtr
     gate:
       jobs:
-        - noop
+        - opendev-buildset-registry
+        - drizzle-test-dtr

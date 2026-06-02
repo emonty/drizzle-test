@@ -1,0 +1,12 @@
+podman_users: []
+
+podman_packages:
+  - podman
+  - podman-compose
+  - passt
+  - slirp4netns
+  - uidmap
+  - netavark
+  - aardvark-dns
+  - crun
+  - runc
