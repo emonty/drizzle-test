@@ -115,7 +115,7 @@ $Devel::Trace::TRACE= 1;
 
 # Misc global variables
 our $drizzle_version_id;
-our $glob_suite_path=             undef;
+our @glob_suite_paths;
 our $glob_drizzle_test_dir=         undef;
 our $glob_drizzle_bench_dir=        undef;
 our $glob_scriptname=             undef;
@@ -137,7 +137,7 @@ our $opt_top_srcdir;
 our $opt_top_builddir;
 our $path_vardir_trace;          # unix formatted opt_vardir for trace files
 our $opt_tmpdir;                 # A path but set directly on cmd line
-our $opt_suitepath;
+our @opt_suitepaths;
 our $opt_testdir;
 
 our $opt_subunit;
@@ -563,7 +563,7 @@ sub command_line_setup () {
              'vardir=s'                 => \$opt_vardir,
              'top-builddir=s'           => \$opt_top_builddir,
              'top-srcdir=s'             => \$opt_top_srcdir,
-             'suitepath=s'              => \$opt_suitepath,
+             'suitepath=s'              => \@opt_suitepaths,
              'testdir=s'                => \$opt_testdir,
              'benchdir=s'               => \$glob_drizzle_bench_dir,
              'mem'                      => \$opt_mem,
@@ -634,13 +634,13 @@ sub command_line_setup () {
   $default_top_srcdir= "$glob_drizzle_test_dir/..";
   $default_top_builddir= "$glob_drizzle_test_dir/..";
 
-  if ( ! $opt_suitepath )
+  if ( ! @opt_suitepaths )
   {
-    $glob_suite_path= "$glob_drizzle_test_dir/../plugin";
+    @glob_suite_paths= ("$glob_drizzle_test_dir/../plugin");
   }
   else
   {
-    $glob_suite_path= $opt_suitepath;
+    @glob_suite_paths= @opt_suitepaths;
   }
   # In most cases, the base directory we find everything relative to,
   # is the parent directory of the "drizzle-test" directory. For source

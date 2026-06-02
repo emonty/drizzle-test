@@ -213,15 +213,21 @@ sub collect_one_suite($)
 
   dtr_verbose("Collecting: $suite");
 
-  my $suitepath= "$::glob_suite_path";
   my $suitedir= "$::glob_drizzle_test_dir"; # Default
   if ( $suite ne "main" )
   {
-    $suitedir= dtr_path_exists(
-             "$suitepath/$suite/drizzle-tests",
-             "$suitepath/$suite/tests",
-             "$suitedir/suite/$suite",
-			       "$suitedir/$suite");
+    my @candidate_suitedirs;
+    foreach my $suitepath (@::glob_suite_paths)
+    {
+      push(@candidate_suitedirs,
+           "$suitepath/$suite/drizzle-tests",
+           "$suitepath/$suite/tests");
+    }
+    push(@candidate_suitedirs,
+         "$suitedir/suite/$suite",
+         "$suitedir/$suite");
+
+    $suitedir= dtr_path_exists(@candidate_suitedirs);
     dtr_verbose("suitedir: $suitedir");
   }
 

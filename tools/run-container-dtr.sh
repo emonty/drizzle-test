@@ -4,13 +4,58 @@
 set -uo pipefail
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+DRIZZLE_SOURCE_DIR="${DRIZZLE_SOURCE_DIR:-${HOME}/src/opendev.org/drizzle/drizzle}"
 BUILD_ROOT="${DRIZZLE_DTR_BUILD_ROOT:-${ROOT_DIR}/.dtr-container-build}"
 VARDIR="${BUILD_ROOT}/tests/var"
 WRAPPER="${ROOT_DIR}/tools/dtr-podman-wrapper.sh"
-NORMAL_TESTS="${DTR_SUITES:-main,bool_type,cast,ddl_transactions,execute,flush_tables,identifiers,jp,mysql_compatibility,regression,tamil,time_type,uuid_type,microtime_type}"
+BASE_TESTS="main,bool_type,cast,ddl_transactions,execute,flush_tables,identifiers,jp,mysql_compatibility,regression,tamil,time_type,uuid_type,microtime_type"
+
+discover_plugin_suites() {
+    local plugin_root="${DRIZZLE_SOURCE_DIR}/plugin"
+    local skip_suites="${DTR_PLUGIN_SUITES_SKIP:-js,json_server,mysql_protocol,query_log,rabbitmq}"
+
+    [ -d "${plugin_root}" ] || return 0
+
+    find "${plugin_root}" -mindepth 1 -maxdepth 1 -type d -exec sh -c '
+        skip_suites="$1"
+        shift
+        for plugin_dir do
+            plugin_ini="${plugin_dir}/plugin.ini"
+            suite_name="${plugin_dir##*/}"
+
+            [ -d "${plugin_dir}/tests/t" ] || continue
+            [ -d "${plugin_dir}/tests/r" ] || continue
+            [ -f "${plugin_ini}" ] || continue
+
+            case ",${skip_suites}," in
+                *,"${suite_name}",*) continue ;;
+            esac
+
+            if grep -Eq "^[[:space:]]*disabled[[:space:]]*=[[:space:]]*(1|yes|true)[[:space:]]*$" "${plugin_ini}"; then
+                continue
+            fi
+            if grep -Eq "^[[:space:]]*testsuite[[:space:]]*=[[:space:]]*disable[[:space:]]*$" "${plugin_ini}"; then
+                continue
+            fi
+
+            printf "%s\n" "${suite_name}"
+        done
+    ' sh "${skip_suites}" {} + | sort | paste -sd, -
+}
+
+if [ -n "${DTR_SUITES:-}" ]; then
+    NORMAL_TESTS="${DTR_SUITES}"
+else
+    PLUGIN_TESTS="${DTR_PLUGIN_SUITES:-$(discover_plugin_suites)}"
+    NORMAL_TESTS="${BASE_TESTS}"
+    if [ -n "${PLUGIN_TESTS}" ]; then
+        NORMAL_TESTS="${NORMAL_TESTS},${PLUGIN_TESTS}"
+    fi
+fi
 
 export DTR_BUILD_THREAD="${DTR_BUILD_THREAD:-auto}"
 export DRIZZLE_DTR_WORKDIR="${ROOT_DIR}"
+export DRIZZLE_DTR_SOURCE_DIR="${DRIZZLE_SOURCE_DIR}"
 export DRIZZLE_DTR_RUN_ID="${DRIZZLE_DTR_RUN_ID:-${ZUUL_UUID:-$$}}"
 export DRIZZLE_DTR_STATE_DIR="${BUILD_ROOT}/podman"
 
@@ -29,11 +74,12 @@ trap 'rm -f "${DTR_LOG}"' EXIT
 
 DTR_TEST_RUN=(
     "${PERL:-/usr/bin/perl}" -I"${ROOT_DIR}/tests/lib" "${ROOT_DIR}/tests/test-run.pl"
-    --top-srcdir="${ROOT_DIR}"
+    --top-srcdir="${DRIZZLE_SOURCE_DIR}"
     --top-builddir="${BUILD_ROOT}"
     --vardir="${VARDIR}"
     --reorder
     --suitepath="${ROOT_DIR}/tests/suite"
+    --suitepath="${DRIZZLE_SOURCE_DIR}/plugin"
     --testdir="${ROOT_DIR}/tests"
     --drizzled=--mysql-protocol.bind-address=0.0.0.0
     --drizzled=--plugin-remove=drizzle_protocol
@@ -65,14 +111,6 @@ if grep -q "Server version not detectable" "${DTR_LOG}"; then
 fi
 
 if [ "${failed}" -ne 0 ]; then
-    if [ -d "${VARDIR}/log" ]; then
-        echo
-        echo "=== ${VARDIR}/log/drizzle-test-run.log ==="
-        sed -n '1,240p' "${VARDIR}/log/drizzle-test-run.log" 2>/dev/null || true
-        echo
-        echo "=== ${VARDIR}/log/master.err ==="
-        sed -n '1,240p' "${VARDIR}/log/master.err" 2>/dev/null || true
-    fi
     exit 1
 fi
 

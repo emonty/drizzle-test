@@ -22,11 +22,28 @@
         done
       failed_when: false
 
-    - name: Collect Drizzle DTR logs
+    - name: Collect Drizzle DTR failure artifacts
       shell: |
-        src="{{ ansible_user_dir }}/src/opendev.org/drizzle/drizzle-test/.dtr-container-build/tests/var/log"
+        src="{{ ansible_user_dir }}/src/opendev.org/drizzle/drizzle-test/.dtr-container-build/tests/var"
+        dest="{{ ansible_user_dir }}/zuul-output/logs/drizzle-tests/var-artifacts"
         if [ -d "${src}" ]; then
-          cp -a "${src}" "{{ ansible_user_dir }}/zuul-output/logs/drizzle-tests/var-log"
+          cd "${src}"
+          find . -type f \( \
+              -path './log/*' \
+              -o -name '*.reject' \
+              -o -name '*.diff' \
+              -o -name '*.result' \
+              -o -name '*.log' \
+              -o -name '*.err' \
+              -o -name 'current_test' \
+            \) -exec sh -c '
+              dest="$1"
+              shift
+              for file do
+                mkdir -p "${dest}/$(dirname "${file}")"
+                cp -a "${file}" "${dest}/${file}"
+              done
+            ' sh "${dest}" {} +
         fi
       failed_when: false
 

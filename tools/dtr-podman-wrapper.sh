@@ -6,6 +6,7 @@ set -euo pipefail
 prog="$(basename "$0")"
 image="${DRIZZLE_TEST_IMAGE:-quay.io/drizzle/drizzle}"
 workdir="${DRIZZLE_DTR_WORKDIR:-$(pwd)}"
+source_dir="${DRIZZLE_DTR_SOURCE_DIR:-}"
 run_id="${DRIZZLE_DTR_RUN_ID:-manual}"
 state_dir="${DRIZZLE_DTR_STATE_DIR:-${workdir}/.dtr-container-build/podman}"
 server_container="${DRIZZLE_DTR_SERVER_CONTAINER:-drizzle-dtr-${run_id}-master}"
@@ -23,6 +24,10 @@ podman_mount_args=(
     --env-host
     --env DRIZZLE_DTR_IN_CONTAINER=1
 )
+
+if [ -n "${source_dir}" ] && [ "${source_dir}" != "${workdir}" ] && [ -d "${source_dir}" ]; then
+    podman_mount_args+=(--volume "${source_dir}:${source_dir}:ro")
+fi
 
 if [ "${prog}" != "drizzled" ]; then
     client_port=""
