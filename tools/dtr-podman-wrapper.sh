@@ -11,12 +11,51 @@ run_id="${DRIZZLE_DTR_RUN_ID:-manual}"
 state_dir="${DRIZZLE_DTR_STATE_DIR:-${workdir}/.dtr-container-build/podman}"
 server_container="${DRIZZLE_DTR_SERVER_CONTAINER:-drizzle-dtr-${run_id}-master}"
 
-if [ "${DRIZZLE_DTR_IN_CONTAINER:-0}" = "1" ] || ! command -v podman >/dev/null 2>&1; then
+exec_drizzle_program() {
+    local prog="$1"
+    shift
+
     if [ "${prog}" = "drizzled" ]; then
-        exec /usr/local/sbin/drizzled "$@"
+        candidates=(/usr/sbin/drizzled /usr/local/sbin/drizzled)
+    else
+        candidates=("/usr/bin/${prog}" "/usr/local/bin/${prog}")
     fi
-    exec "/usr/local/bin/${prog}" "$@"
+
+    for exe in "${candidates[@]}"; do
+        if [ -x "${exe}" ]; then
+            exec "${exe}" "$@"
+        fi
+    done
+
+    printf 'dtr-podman-wrapper: could not find %s in container\n' "${prog}" >&2
+    exit 127
+}
+
+if [ "${DRIZZLE_DTR_IN_CONTAINER:-0}" = "1" ] || ! command -v podman >/dev/null 2>&1; then
+    exec_drizzle_program "${prog}" "$@"
 fi
+
+container_command=(
+    /bin/sh -ec '
+        prog="$1"
+        shift
+
+        if [ "${prog}" = "drizzled" ]; then
+            candidates="/usr/sbin/drizzled /usr/local/sbin/drizzled"
+        else
+            candidates="/usr/bin/${prog} /usr/local/bin/${prog}"
+        fi
+
+        for exe in ${candidates}; do
+            if [ -x "${exe}" ]; then
+                exec "${exe}" "$@"
+            fi
+        done
+
+        printf "dtr-podman-wrapper: could not find %s in container\n" "${prog}" >&2
+        exit 127
+    ' sh
+)
 
 podman_mount_args=(
     --volume "${workdir}:${workdir}:rw"
@@ -57,7 +96,8 @@ if [ "${prog}" != "drizzled" ]; then
     exec podman run --rm \
         "${network_args[@]}" \
         "${podman_mount_args[@]}" \
-        "${image}" "/usr/local/bin/${prog}" "$@"
+        "${image}" \
+        "${container_command[@]}" "${prog}" "$@"
 fi
 
 help_only=0
@@ -83,7 +123,8 @@ done
 if [ "${help_only}" = "1" ]; then
     exec podman run --rm \
         "${podman_mount_args[@]}" \
-        "${image}" /usr/local/sbin/drizzled "$@"
+        "${image}" \
+        "${container_command[@]}" "${prog}" "$@"
 fi
 
 container="drizzle-dtr-${run_id}-${instance}"
@@ -113,7 +154,8 @@ podman run --rm \
     --name "${container}" \
     "${port_args[@]}" \
     "${podman_mount_args[@]}" \
-    "${image}" /usr/local/sbin/drizzled "$@" &
+    "${image}" \
+    "${container_command[@]}" "${prog}" "$@" &
 podman_pid=$!
 
 wait "${podman_pid}"
