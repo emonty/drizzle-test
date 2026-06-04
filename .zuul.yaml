@@ -23,7 +23,7 @@
 
 - project:
     queue: drizzle
-    check:
+    vouched:
       jobs:
         - opendev-buildset-registry
         - drizzle-test-dtr
