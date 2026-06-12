@@ -35,8 +35,10 @@ if [ "${DRIZZLE_DTR_IN_CONTAINER:-0}" = "1" ] || ! command -v podman >/dev/null 
     exec_drizzle_program "${prog}" "$@"
 fi
 
+podman_entrypoint_args=(--entrypoint /bin/sh)
+
 container_command=(
-    /bin/sh -ec '
+    -ec '
         prog="$1"
         shift
 
@@ -95,6 +97,7 @@ if [ "${prog}" != "drizzled" ]; then
     fi
     exec podman run --rm \
         "${network_args[@]}" \
+        "${podman_entrypoint_args[@]}" \
         "${podman_mount_args[@]}" \
         "${image}" \
         "${container_command[@]}" "${prog}" "$@"
@@ -122,6 +125,7 @@ done
 
 if [ "${help_only}" = "1" ]; then
     exec podman run --rm \
+        "${podman_entrypoint_args[@]}" \
         "${podman_mount_args[@]}" \
         "${image}" \
         "${container_command[@]}" "${prog}" "$@"
@@ -153,6 +157,7 @@ trap cleanup INT TERM HUP EXIT
 podman run --rm \
     --name "${container}" \
     "${port_args[@]}" \
+    "${podman_entrypoint_args[@]}" \
     "${podman_mount_args[@]}" \
     "${image}" \
     "${container_command[@]}" "${prog}" "$@" &
