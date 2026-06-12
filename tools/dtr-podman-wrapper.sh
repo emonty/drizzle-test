@@ -35,36 +35,13 @@ if [ "${DRIZZLE_DTR_IN_CONTAINER:-0}" = "1" ] || ! command -v podman >/dev/null 
     exec_drizzle_program "${prog}" "$@"
 fi
 
-podman_entrypoint_args=(--entrypoint /bin/sh)
-
-container_command=(
-    -ec '
-        prog="$1"
-        shift
-
-        if [ "${prog}" = "drizzled" ]; then
-            candidates="/usr/sbin/drizzled /usr/local/sbin/drizzled"
-        else
-            candidates="/usr/bin/${prog} /usr/local/bin/${prog}"
-        fi
-
-        for exe in ${candidates}; do
-            if [ -x "${exe}" ]; then
-                exec "${exe}" "$@"
-            fi
-        done
-
-        printf "dtr-podman-wrapper: could not find %s in container\n" "${prog}" >&2
-        exit 127
-    ' sh
-)
-
 podman_mount_args=(
     --volume "${workdir}:${workdir}:rw"
     --workdir "${PWD}"
     --env-host
     --env DRIZZLE_DTR_IN_CONTAINER=1
 )
+server_entrypoint_args=(--entrypoint /usr/sbin/drizzled)
 
 if [ -n "${source_dir}" ] && [ "${source_dir}" != "${workdir}" ] && [ -d "${source_dir}" ]; then
     podman_mount_args+=(--volume "${source_dir}:${source_dir}:ro")
@@ -97,10 +74,10 @@ if [ "${prog}" != "drizzled" ]; then
     fi
     exec podman run --rm \
         "${network_args[@]}" \
-        "${podman_entrypoint_args[@]}" \
+        --entrypoint "/usr/bin/${prog}" \
         "${podman_mount_args[@]}" \
         "${image}" \
-        "${container_command[@]}" "${prog}" "$@"
+        "$@"
 fi
 
 help_only=0
@@ -125,10 +102,10 @@ done
 
 if [ "${help_only}" = "1" ]; then
     exec podman run --rm \
-        "${podman_entrypoint_args[@]}" \
+        "${server_entrypoint_args[@]}" \
         "${podman_mount_args[@]}" \
         "${image}" \
-        "${container_command[@]}" "${prog}" "$@"
+        "$@"
 fi
 
 container="drizzle-dtr-${run_id}-${instance}"
@@ -157,10 +134,10 @@ trap cleanup INT TERM HUP EXIT
 podman run --rm \
     --name "${container}" \
     "${port_args[@]}" \
-    "${podman_entrypoint_args[@]}" \
+    "${server_entrypoint_args[@]}" \
     "${podman_mount_args[@]}" \
     "${image}" \
-    "${container_command[@]}" "${prog}" "$@" &
+    "$@" &
 podman_pid=$!
 
 wait "${podman_pid}"
